@@ -5,7 +5,7 @@ import time
 from utils.importFiles import run_day_classes
 
 def print_time(start, end):
-  print("\n")
+  print()
   print("=== Total time ===")
   print(f"Time elapsed: {end-start:.2f} seconds")
 
