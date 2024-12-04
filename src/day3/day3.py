@@ -15,6 +15,7 @@ class Day3(BaseDay):
 
   def check_for_muls(self):
     lines = read_file(self.get_input_file_path())
+    sum = 0
     for line in lines:
       sum += self.get_muls(line)
     return sum
