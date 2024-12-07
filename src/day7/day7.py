@@ -10,44 +10,62 @@ class Day7(BaseDay):
     nums = re.findall(regex, line)
     num_arr = [int(x) for x in nums]
     return num_arr[0], num_arr[1:]
-  
-  def get_operation_permutations(self, num_vals, concat=False):
-    if concat:
-      operations = ['+', '*', '||']
-    else:
-      operations = ['+', '*']
+      
+  def valid_configuration(self, total, rev_values, concat):
+    # We should never have 0, since we remove a value one at a time
+    if len(rev_values) == 0:
+      return False
 
-    return list(itertools.product(operations, repeat=num_vals))
-  
-  def use_operation(self, x, y, operation):
-    match operation:
-      case '+':
-        return x + y
-      case '*':
-        return x * y
-      case '||':
-        return int(str(x) + str(y))
-      case _:
-        return 0
-  
-  def determine_possible_total(self, total, values, concat=False):
-    operation_perms = self.get_operation_permutations(len(values), concat)
-    for operation_perm in operation_perms:
-      result = reduce(lambda prev, current, i=iter(operation_perm): self.use_operation(prev, current, next(i)), values)
-      if result == total:
-        return total
-    return 0
+    # If our operation path is valid, we check if the result exists
+    if len(rev_values) == 1:
+      return total == rev_values[0]
+    
+    # Start the result as false
+    result = False
 
-  def get_calibration(self, concat=False):
+    # Pre-computed values
+    check_value = rev_values[0]
+    rest_list = rev_values[1:]
+    str_total = str(total)
+    str_check = str(check_value)
+
+    # Check concatenation first
+    if concat and str_total.endswith(str_check):
+      modified_total_str = str_total[:-len(str_check)]
+
+      # If the total string is empty, that means this is only valid if the
+      # rest of the list is all 1's (use multiplication)
+      if len(modified_total_str) == 0:
+        return reduce(lambda prev, current: prev and current == 1, rest_list, True)
+      
+      result = self.valid_configuration(int(modified_total_str), rest_list, concat)
+    
+    # Check multiplication next
+    if not result and total % check_value == 0:
+      result = self.valid_configuration(int(total / check_value), rest_list, concat)
+
+    # Check addition last
+    if not result:
+      subtraction = total-check_value
+      # If we subtracted too much, this isn't valid because the other operations aren't valid
+      if subtraction < 0:
+        return False
+      result = self.valid_configuration(subtraction, rest_list, concat)
+
+    return result
+
+  def get_calibration(self, concat):
     lines = read_file(self.get_input_file_path())
     sum = 0
     for line in lines:
       total, values = self.get_total_and_nums(line)
-      sum += self.determine_possible_total(total, values, concat)
+      result = self.valid_configuration(total, values[::-1], concat)
+      if result:
+        sum += total
     return sum
 
   def part1(self):
-    return self.get_calibration()
+    return self.get_calibration(concat=False)
 
   def part2(self):
     return self.get_calibration(concat=True)
