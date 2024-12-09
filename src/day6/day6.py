@@ -37,7 +37,7 @@ class Day6(BaseDay):
           return row_num, col_num
         
   def is_out_of_bounds(self, lines, row, col):
-    return col < 0 or row < 0 or row >= len(lines) or col >= len(lines[row])
+    return col < 0 or row < 0 or row >= len(lines) or col >= len(lines[row]) or row == '\n' or col == '\n'
         
   def walk_and_mark(self, lines, row_num, col_num, direction):
     marked_path = {}
@@ -58,7 +58,29 @@ class Day6(BaseDay):
         row_num = next_y_step
         col_num = next_x_step
 
-    
+  def walk_and_detect_loop(self, lines, row_num, col_num, direction, obstruction):
+    marked_path = {}
+    row_obs, col_obs = obstruction
+    while(True):
+      # Return if we already came here (looped)
+      if direction in marked_path.get(f"{row_num},{col_num}", []):
+        return 1
+
+      # mark the values
+      marked_path[f"{row_num},{col_num}"] = marked_path.get(f"{row_num},{col_num}", []) + [direction]
+
+      row_change, col_change = self.direction_to_path(direction)
+      next_y_step = row_num + row_change
+      next_x_step = col_num + col_change
+      if self.is_out_of_bounds(lines, next_y_step, next_x_step):
+        return 0
+      
+      next_step = lines[next_y_step][next_x_step]
+      if next_step == '#' or (next_y_step == row_obs and next_x_step == col_obs):
+        direction = self.turn_right(direction)
+      else:
+        row_num = next_y_step
+        col_num = next_x_step
 
         
   def traverse(self):
@@ -66,76 +88,17 @@ class Day6(BaseDay):
     start_row, start_col = self.get_start_position(lines)
     length = self.walk_and_mark(lines, start_row, start_col, 'u')
     return length
-    
 
-  def determine_loop(self, lines, row_num, col_num, direction, proposed_row, proposed_col):
-    line_copy = copy.deepcopy(lines)
-
-    line_arr = list(line_copy[proposed_row])
-    line_arr[proposed_col] = '#'
-    line_str = ''.join(line_arr)
-    line_copy[proposed_row] = line_str
-
-    marked_path = {}
-
-    while(True):
-      print('row, col', row_num, col_num, proposed_row, proposed_col, direction)
-      if direction in marked_path.get(f"{row_num},{col_num}", []):
-        return True
-
-      marked_path[f"{row_num},{col_num}"] = marked_path.get(f"{row_num},{col_num}", []) + [direction]
-
-      row_change, col_change = self.direction_to_path(direction)
-      next_y_step = row_num + row_change
-      next_x_step = col_num + col_change
-      if self.is_out_of_bounds(line_copy, next_y_step, next_x_step):
-        return False
-      
-      next_step = line_copy[next_y_step][next_x_step]
-      if next_step == '#':
-        direction = self.turn_right(direction)
-      else:
-        row_num = next_y_step
-        col_num = next_x_step
-
-  # def determine_loop(self, lines, row_num, col_num, direction):
-  #   marked_path = {}
-  #   not_finished = True
-  #   while(not_finished):
-  #     # mark the values
-  #     marked_path.get(f"{row_num},{col_num}", []) + [direction]
-
-  #     row_change, col_change = self.direction_to_path(direction)
-  #     next_y_step = row_num + row_change
-  #     next_x_step = col_num + col_change
-  #     if self.is_out_of_bounds(lines, next_y_step, next_x_step):
-  #       not_finished = False
-      
-  #     next_step = lines[next_y_step][next_x_step]
-  #     if next_step == '#':
-  #       direction = self.turn_right(direction)
-  #     else:
-  #       row_num = next_y_step
-  #       col_num = next_x_step
-  #   for row, line in enumerate(lines):
-  #     for col, char in enumerate(line):
-  #       if char == '^' or char == '#':
-  #         continue
-
-  #       if marked_path.get(f"{row},{col}", False):
-  #         if marked_path[row][col] 
-    
-
-
-  def count_loop_objects(self):
+  def count_looping_possibilities(self):
     lines = read_file(self.get_input_file_path())
     start_row, start_col = self.get_start_position(lines)
-    sum = 0
-    for row_num, line in enumerate(lines):
-      for col_num, char in enumerate(line):
-        if char != '^' and char != '#':
-          sum += int(self.determine_loop(lines, start_row, start_col, 'u', row_num, col_num))
-    return sum
+    loops = 0
+    for row, line in enumerate(lines):
+      for col, char in enumerate(line):
+        if char == '.':
+          obstruction = (row, col)
+          loops += self.walk_and_detect_loop(lines, start_row, start_col, 'u', obstruction)
+    return loops
 
   
 
@@ -143,4 +106,4 @@ class Day6(BaseDay):
     return self.traverse()
 
   def part2(self):
-    return self.count_loop_objects()
+    return self.count_looping_possibilities()
