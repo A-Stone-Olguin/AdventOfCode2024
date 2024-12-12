@@ -40,16 +40,16 @@ class Day6(BaseDay):
     return col < 0 or row < 0 or row >= len(lines) or col >= len(lines[row]) or row == '\n' or col == '\n'
         
   def walk_and_mark(self, lines, row_num, col_num, direction):
-    marked_path = {}
+    marked_path = set()
     while(True):
       # mark the values
-      marked_path[f"{row_num},{col_num}"] = 1
+      marked_path.add(f"{row_num},{col_num}")
 
       row_change, col_change = self.direction_to_path(direction)
       next_y_step = row_num + row_change
       next_x_step = col_num + col_change
       if self.is_out_of_bounds(lines, next_y_step, next_x_step):
-        return len(marked_path.keys())
+        return marked_path
       
       next_step = lines[next_y_step][next_x_step]
       if next_step == '#':
@@ -86,18 +86,21 @@ class Day6(BaseDay):
   def traverse(self):
     lines = read_file(self.get_input_file_path())
     start_row, start_col = self.get_start_position(lines)
-    length = self.walk_and_mark(lines, start_row, start_col, 'u')
-    return length
+    marked_path = self.walk_and_mark(lines, start_row, start_col, 'u')
+    return len(marked_path)
 
   def count_looping_possibilities(self):
     lines = read_file(self.get_input_file_path())
     start_row, start_col = self.get_start_position(lines)
+    marked_path = self.walk_and_mark(lines, start_row, start_col, 'u')
     loops = 0
-    for row, line in enumerate(lines):
-      for col, char in enumerate(line):
-        if char == '.':
-          obstruction = (row, col)
-          loops += self.walk_and_detect_loop(lines, start_row, start_col, 'u', obstruction)
+    for string in marked_path:
+      row, col = [int(x) for x in string.split(',')]
+      if row == start_row and col == start_col:
+        continue
+
+      obstruction = (row, col)
+      loops += self.walk_and_detect_loop(lines, start_row, start_col, 'u', obstruction)
     return loops
 
   
@@ -106,4 +109,5 @@ class Day6(BaseDay):
     return self.traverse()
 
   def part2(self):
+    print('expecting 6, 1586')
     return self.count_looping_possibilities()
